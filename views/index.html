@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>Essay Grader</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Josefin+Slab:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Josefin+Slab:ital,wght@0,100;1,100&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Josefin+Slab:ital,wght@0,100;1,100&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap" rel="stylesheet">
+    </head>
+
+    <style>
+        .josefin-slab {
+            font-family: "Josefin Slab", serif;
+            font-optical-sizing: auto;
+            font-weight: 100;
+            font-style: normal;
+        }
+
+        .hide {
+            color: transparent;
+        }
+
+        .show {
+            color: black;
+        }
+
+        .title {
+            color: black;
+            text-align: center;
+            font-size: 50px;
+            text-decoration: underline 5px;
+            font-family: "Josefin Slab", serif;
+            font-optical-sizing: auto;
+            font-weight: 500;
+            font-style: normal;
+        }
+
+        .gradeButton {
+            width: 250px;
+            height: 50px;
+            font-size: 25px;
+            background: #46b446;
+            border-radius: 25px;
+            border: black;
+        }
+
+        .gradeButton:hover {
+            background: hsl(120, 44%, 44%);
+            color: rgb(34, 34, 34);
+        }
+
+        .essayEnter {
+            background: rgb(225 243 225);
+            border-width: 1px;
+            border: black;
+        }
+
+        .displayText {
+            font-size: 25px;
+            font-family: "Josefin Slab", serif;
+            font-optical-sizing: auto;
+            font-weight: 500;
+            font-style: normal;
+        }
+
+        .text {
+            font-size: 25px;
+            font-family: "Playfair Display", serif;
+            font-optical-sizing: auto;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .reasonsTitle {
+            font-size: 25px;
+            font-family: "Playfair Display", serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        p {
+            font-size: 20px;
+            font-family: "Playfair Display", serif;
+            font-weight: 300;
+            font-style: normal;
+            letter-spacing: 1px;
+        }
+    </style>
+
+    <body style="background-color: rgb(182, 206, 182);">
+        <center>
+            <h2 class="title">Essay Grader</h2>
+            <button onclick="gradeEssay()" class="gradeButton">Grade</button> <br></br>
+            <p id="score" class="text">Score: </p>
+
+            <p class="hide" id="reasonsText">Correction(s): </p>
+            <div id="reasons">
+            </div>
+            <br>
+            <br>
+            
+            <p class="displayText">Type Essay:</p>
+            <textarea id="essay" rows="200" cols="150" class="essayEnter"></textarea>
+        </center>
+
+        <script>
+            let reasons = [];
+            var currI = 0;
+
+            function addListItems() {
+                var list = document.getElementById("reasons");
+                var rText = document.getElementById("reasonsText");
+                list.innerHTML = '';
+
+                if (reasons.length > 0)
+                {
+                    list.className = "show";
+                    rText.className = "reasonsTitle";
+
+                    for (let i = 0; i < reasons.length; i++)
+                    {
+                        var reason = reasons[i];
+                        var listItem = document.createElement("p");
+                        listItem.value = reason;
+                        listItem.innerHTML = reason;
+                        list.appendChild(listItem);
+                    }
+                }
+                else
+                {
+                    list.className = "hide";
+                    rText.className = "hide";
+                }
+            }
+
+            function gradeEssay() {
+                currI = 0;
+                reasons = [];
+                var essay = document.getElementById("essay").value;
+                var score = "Score: ";
+                score += gradeEssayHelper(essay);
+                document.getElementById("score").textContent = score;
+                addListItems();
+            }
+
+            function gradeEssayHelper(essay) {
+                var score = 100;
+                var len = findEssayLength(essay);
+
+                if (len < 500) {
+                    score -= 50;
+                    reasons[currI] = "This essay is too short. Please increase the word count past 500.";
+                    currI++;
+                }
+                else if (len > 1000) {
+                    score -= 50;
+                    reasons[currI] = "This essay is too long. Please shorten the word count to under 1000.";
+                    currI++;
+                }
+
+                var scoreTaken = checkNNN(essay);
+
+                score -= scoreTaken;
+
+                if (score < -200) {
+                    score = 200;
+                }
+
+                return score;
+            }
+
+            function findEssayLength(essay) {
+                var words = essay.split(" ");
+                var length = words.length;
+                if (words[length - 1] === "") {
+                    length = length - 1;
+                }
+                return length;
+            }
+
+            function checkNNN(essay) {
+                var nnnCount = 0;
+
+                const wordsAndPhrases = [
+                    // Pronouns
+                    "i", "my", "me", "myself", "We", "our", "us", "ourselves",
+                    "You", "your", "you", "yourself", "You", "your", "you", "yourselves",
+
+                    // "Thing" Words
+                    "thing", "things", "object", "objects", "item", "items", "a lot",
+                    "lots",
+
+                    // Weak Verbs
+                    "is", "am", "are", "was", "were", "be", "been", "being", "have", "has",
+                    "had", "do", "does", "did", "make", "makes", "made", "create",
+                    "creates", "created", "get", "gets", "got", "gotten", "getting", "got",
+                    "run", "runs", "ran", "running", "say", "says",
+
+                    // Weak Adjectives
+                    "good", "better", "best", "bad", "worse", "worst", "nice", "nicer",
+                    "nicest", "beautiful", "big", "bigger", "biggest", "cute", "fun",
+                    "how", "really", "rough", "stuff", "tough", "very",
+
+                    // "Get" Words
+                    "get", "gets", "got", "gotten", "getting", "got",
+
+                    // General Words
+                    "throughout", "constantly", "always", "usually", "often", "sometimes",
+                    "rarely", "seldom",
+
+                    // Other Phrases
+                    "the reader", "book", "clearly", "this shows", "in conclusion",
+
+                    // Qualifying Adverbs
+                    "really", "very", "rather", "quite", "fairly", "somewhat", "pretty",
+
+                    // Wishy-Washy Words
+                    "seems", "appears", "maybe", "perhaps", "possibly",
+
+                    // Words like "sadly" and "unfortunately"
+                    "sadly", "unfortunately",
+
+                    // Order Words
+                    "firstly", "secondly", "thirdly", "finally",
+
+                    // Family
+                    "kid", "mom", "dad",
+
+                    // Slang and Colloquial Expressions
+                    "gonna", "wanna", "kinda", "stuff", "cool", "awesome", "bro", "dude",
+                    "chill", "lit", "bruh", "homie",
+
+                    // Abbreviations and Contractions
+                    "u", "r", "b4", "2", "lol", "omg", "bc", "thx", "pls", "g2g", "gr8",
+                    "btw", "smh", "idk", "fyi", "gtg", "omw", "ttyl", "imho", "brb",
+                    "rofl", "afaik",
+
+                    // Other Informalities
+                    "yup", "nope", "uh-oh", "gimme", "wassup",
+                ];
+
+                var words = essay.split(" ");
+
+                for (var i = 0; i < words.length; i++) {
+                    var word = words[i];
+                    var lowerWord = word.toLowerCase();
+
+                    if (wordsAndPhrases.includes(lowerWord)) {
+                        hasNNN = true;
+                        var violation = "Word " + i + " (" + word + "): " + "This word violates the NNN word list. Check Schoology for more information.";
+                        reasons[currI] = violation;
+                        currI++;
+                        nnnCount++;
+                    }
+                }
+
+                return nnnCount;
+            }
+        </script>
+    </body>
+</html>
